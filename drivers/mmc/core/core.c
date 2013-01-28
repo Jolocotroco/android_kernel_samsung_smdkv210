@@ -1851,6 +1851,7 @@ int mmc_suspend_host(struct mmc_host *host)
 			host->pm_flags = 0;
 			err = 0;
 		}
+		flush_delayed_work(&host->disable);
 	}
 	mmc_bus_put(host);
 
@@ -1961,7 +1962,6 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 		}
 		host->rescan_disable = 0;
 		spin_unlock_irqrestore(&host->lock, flags);
-		if (!host->card || host->card->type != MMC_TYPE_SDIO)
 		mmc_detect_change(host, 0);
 
 	}

@@ -295,6 +295,11 @@ extern void s5pv210_setup_sdhci_cfg_card(struct platform_device *dev,
 					   struct mmc_ios *ios,
 					   struct mmc_card *card);
 
+extern void s5pv210_setup_sdhci1_cfg_card(struct platform_device *dev,
+					   void __iomem *r,
+					   struct mmc_ios *ios,
+					   struct mmc_card *card);
+
 static inline void s5pv210_default_sdhci0(void)
 {
 #ifdef CONFIG_S3C_DEV_HSMMC
@@ -309,7 +314,7 @@ static inline void s5pv210_default_sdhci1(void)
 #ifdef CONFIG_S3C_DEV_HSMMC1
 	s3c_hsmmc1_def_platdata.clocks = s5pv210_hsmmc_clksrcs;
 	s3c_hsmmc1_def_platdata.cfg_gpio = s5pv210_setup_sdhci1_cfg_gpio;
-	s3c_hsmmc1_def_platdata.cfg_card = s5pv210_setup_sdhci_cfg_card;
+	s3c_hsmmc1_def_platdata.cfg_card = s5pv210_setup_sdhci1_cfg_card;
 #endif
 }
 

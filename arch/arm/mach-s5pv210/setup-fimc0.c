@@ -41,7 +41,6 @@ void s3c_fimc0_cfg_gpio(struct platform_device *pdev)
 		s3c_gpio_setpull(S5PV210_GPE1(i), S3C_GPIO_PULL_NONE);
 	}
 
-#if defined(CONFIG_MACH_SMDKC110) || defined(CONFIG_MACH_SMDKV210) || defined(CONFIG_MACH_MID)
 	s3c_gpio_cfgpin(S5PV210_GPE1(4), S5PV210_GPE1_4_CAM_A_FIELD);
 	s3c_gpio_setpull(S5PV210_GPE1(4), S3C_GPIO_PULL_NONE);
 
@@ -55,7 +54,6 @@ void s3c_fimc0_cfg_gpio(struct platform_device *pdev)
 		s3c_gpio_cfgpin(S5PV210_GPJ1(i), S3C_GPIO_SFN(3));
 		s3c_gpio_setpull(S5PV210_GPJ1(i), S3C_GPIO_PULL_NONE);
 	}
-#endif
 
 	/* note : driver strength to max is unnecessary */
 }
@@ -78,7 +76,7 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 		goto err_clk2;
 	}
 
-	sclk_fimc_lclk = clk_get(&pdev->dev, "sclk_fimc_lclk");
+	sclk_fimc_lclk = clk_get(&pdev->dev, "fimc");
 	if (IS_ERR(sclk_fimc_lclk)) {
 		dev_err(&pdev->dev, "failed to get sclk_fimc_lclk\n");
 		goto err_clk3;

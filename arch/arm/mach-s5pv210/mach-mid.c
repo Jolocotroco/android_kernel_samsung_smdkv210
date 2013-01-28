@@ -399,15 +399,15 @@ struct platform_device mid_dm9000 = {
 	},
 };
 
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 	(6144 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 	(6144 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 	(11264 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 	(11264 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 	(8192 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 	(8192 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 	(14336 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 	(21504 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD 	(800 * 480 * 4 * \
 						(CONFIG_FB_S3C_NR_BUFFERS + \
 						(CONFIG_FB_S3C_NUM_OVLY_WIN * \
 						CONFIG_FB_S3C_NUM_BUF_OVLY_WIN)))
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG 	(4092 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG 	(4096 * SZ_1K)
 
 static struct s5p_media_device s5pv210_media_devs[] = {
         [0] = {
@@ -830,7 +830,7 @@ static struct s3c_platform_camera cam_hi704 = {
 static struct s3c_platform_fimc fimc_plat_lsi = {
 	.srclk_name		= "mout_mpll",
 	.clk_name		= "sclk_fimc",
-	.lclk_name		= "sclk_fimc_lclk",
+	.lclk_name		= "fimc",
 	.clk_rate		= 166750000,
 	.default_cam	= CAMERA_PAR_A,
 	.camera = {
@@ -1097,66 +1097,15 @@ static struct s3c_sdhci_platdata s5pv210_hsmmc0_pdata __initdata = {
 	.host_caps = MMC_CAP_8_BIT_DATA,
 #endif
 };
+#endif
 
+#ifdef CONFIG_S3C_DEV_HSMMC1
 static struct s3c_sdhci_platdata s5pv210_hsmmc1_pdata __initdata = {
 /* For Atheros WiFi */
 	.cd_type = S3C_SDHCI_CD_PERMANENT,
 	.clk_type = S3C_SDHCI_CLK_DIV_EXTERNAL,
 };
 #endif
-
-static void __init mid_setup_clocks(void) {
-	struct clk *pclk;
-	struct clk *clk;
-
-#ifdef CONFIG_S3C_DEV_HSMMC
-	/* set MMC0 clock */
-	clk = clk_get(&s3c_device_hsmmc0.dev, "sclk_mmc");
-	pclk = clk_get(NULL, "mout_mpll");
-	clk_set_parent(clk, pclk);
-	clk_set_rate(clk, 50*MHZ);
-
-	pr_info("%s: %s: source is %s, rate is %ld\n",
-				__func__, clk->name, clk->parent->name,
-				clk_get_rate(clk));
-#endif
-
-#ifdef CONFIG_S3C_DEV_HSMMC1
-	/* set MMC1 clock */
-	clk = clk_get(&s3c_device_hsmmc1.dev, "sclk_mmc");
-	pclk = clk_get(NULL, "mout_mpll");
-	clk_set_parent(clk, pclk);
-	clk_set_rate(clk, 50*MHZ);
-
-	pr_info("%s: %s: source is %s, rate is %ld\n",
-				__func__, clk->name, clk->parent->name,
-				clk_get_rate(clk));
-#endif
-
-#ifdef CONFIG_S3C_DEV_HSMMC2
-	/* set MMC2 clock */
-	clk = clk_get(&s3c_device_hsmmc2.dev, "sclk_mmc");
-	pclk = clk_get(NULL, "mout_mpll");
-	clk_set_parent(clk, pclk);
-	clk_set_rate(clk, 50*MHZ);
-
-	pr_info("%s: %s: source is %s, rate is %ld\n",
-				__func__, clk->name, clk->parent->name,
-				clk_get_rate(clk));
-#endif
-
-#ifdef CONFIG_S3C_DEV_HSMMC3
-	/* set MMC3 clock */
-	clk = clk_get(&s3c_device_hsmmc3.dev, "sclk_mmc");
-	pclk = clk_get(NULL, "mout_mpll");
-	clk_set_parent(clk, pclk);
-	clk_set_rate(clk, 50*MHZ);
-
-	pr_info("%s: %s: source is %s, rate is %ld\n",
-				__func__, clk->name, clk->parent->name,
-			 clk_get_rate(clk));
-#endif
-}
 
 #ifdef CONFIG_USB_SUPPORT
 /* Initializes OTG Phy. */
@@ -1520,7 +1469,6 @@ static void __init mid_machine_init(void) {
 	regulator_has_full_constraints();
 #endif
 	mid_usbhost_setpower(1);
-	mid_setup_clocks();
 }
 
 MACHINE_START(SMDKV210, "SMDKV210")
@@ -1531,4 +1479,3 @@ MACHINE_START(SMDKV210, "SMDKV210")
 	.init_machine	= mid_machine_init,
         .timer          = &s5p_systimer,
 MACHINE_END
-

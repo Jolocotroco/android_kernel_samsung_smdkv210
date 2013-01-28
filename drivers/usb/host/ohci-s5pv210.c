@@ -176,9 +176,9 @@ static int ohci_hcd_s5pv210_drv_probe(struct platform_device *pdev)
 		goto err1;
 	}
 
-	usb_clk = clk_get(&pdev->dev, "usbhost");
+	usb_clk = clk_get(&pdev->dev, "usb-host");
 	if (IS_ERR(usb_clk)) {
-		dev_err(&pdev->dev, "cannot get usbhost clock\n");
+		dev_err(&pdev->dev, "cannot get usb-host clock\n");
 		retval = -ENODEV;
 		goto err2;
 	}

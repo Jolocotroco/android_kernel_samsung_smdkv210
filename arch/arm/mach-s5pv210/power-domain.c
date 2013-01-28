@@ -140,13 +140,13 @@ struct clk_should_be_running s5pv210_pd_audio_clk[] = {
 
 struct clk_should_be_running s5pv210_pd_cam_clk[] = {
 	{
-		.clk_name	= "sclk_fimc_lclk",
+		.clk_name	= "fimc",
 		.dev		= &s3c_device_fimc0.dev,
 	}, {
-		.clk_name	= "sclk_fimc_lclk",
+		.clk_name	= "fimc",
 		.dev		= &s3c_device_fimc1.dev,
 	}, {
-		.clk_name	= "sclk_fimc_lclk",
+		.clk_name	= "fimc",
 		.dev		= &s3c_device_fimc2.dev,
 	}, {
 		.clk_name	= "sclk_csis",
@@ -181,11 +181,11 @@ struct clk_should_be_running s5pv210_pd_lcd_clk[] = {
 	{
 		.clk_name	= "lcd",
 		.dev		= &s3c_device_fb.dev,
-	}, {
+	},/* {
 		.clk_name	= "dsim",
 		.dev		= &s3c_device_fb.dev,
-	}, {
-		.clk_name	= "g2d",
+	},*/ { 
+		.clk_name	= "sclk_fimg2d",
 		.dev		= &s3c_device_fb.dev,
 	}, {
 		/* end of the clock array */
@@ -408,7 +408,7 @@ static int s5pv210_pd_is_enabled(struct regulator_dev *dev)
 static int s5pv210_pd_enable(struct regulator_dev *dev)
 {
 	struct s5pv210_pd_data *data = rdev_get_drvdata(dev);
-	int ret;
+	int ret = 0;
 
 	if (data->clk_run)
 		s5pv210_pd_clk_enable(data->clk_run);
@@ -416,13 +416,12 @@ static int s5pv210_pd_enable(struct regulator_dev *dev)
 	ret = s5pv210_pd_ctrl(data->ctrlbit, 1);
 	if (ret < 0) {
 		printk(KERN_ERR "failed to enable power domain\n");
-		return ret;
 	}
 
 	if (data->clk_run)
 		s5pv210_pd_clk_disable(data->clk_run);
 
-	return 0;
+	return ret;
 }
 
 static int s5pv210_pd_disable(struct regulator_dev *dev)

@@ -102,6 +102,20 @@ void s5pv210_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 
 void s5pv210_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 {
+#if 0
+	struct s3c_sdhci_platdata *pdata = dev->dev.platform_data;
+
+	/* Set all the necessary GPG3[0:1] pins to special-function 2 */
+	s3c_gpio_cfgrange_nopull(S5PV210_GPG3(0), 2, S3C_GPIO_SFN(2));
+
+	/* Data pin GPG3[3:6] to special-function 2 */
+	s3c_gpio_cfgrange_nopull(S5PV210_GPG3(3), 4, S3C_GPIO_SFN(2));
+
+	if (pdata->cd_type == S3C_SDHCI_CD_INTERNAL) {
+		s3c_gpio_setpull(S5PV210_GPG3(2), S3C_GPIO_PULL_UP);
+		s3c_gpio_cfgpin(S5PV210_GPG3(2), S3C_GPIO_SFN(2));
+	}
+#else
 	unsigned int gpio;
 
 	switch (width) {
@@ -117,8 +131,13 @@ void s5pv210_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 			}
 			s3c_gpio_set_drvstrength(gpio, S3C_GPIO_DRVSTR_2X);
 		}
+
+		writel(0x3fff, S5PV210_GPG3DRV);
+
+		printk(" s5pv210_setup_sdhci3_cfg_gpio-------  S5PV210_GPG3DRV = 0x%04x \n",readl(S5PV210_GPG3DRV));
 		break;
 	default:
 		printk(KERN_ERR "Wrong SD/MMC bus width : %d\n", width);
 	}
+#endif
 }
