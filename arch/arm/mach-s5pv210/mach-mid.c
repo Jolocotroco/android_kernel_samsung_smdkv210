@@ -52,9 +52,7 @@
 #include <plat/devs.h>
 #include <plat/cpu.h>
 #include <plat/ts.h>
-#include <plat/ata.h>
 #include <plat/iic.h>
-#include <plat/keypad.h>
 #include <plat/pm.h>
 #include <plat/fb.h>
 #include <plat/mfc.h>
@@ -76,9 +74,7 @@
 #include <mach/gpio.h>
 #include <mach/gpio-mid.h>
 #include <mach/mid-cfg.h>
-#ifdef CONFIG_ANDROID_PMEM
-#include <linux/android_pmem.h>
-#endif
+
 #include <plat/media.h>
 #include <mach/media.h>
 #include <mach/gpio-smdkc110.h>
@@ -341,29 +337,6 @@ static struct max8998_platform_data max8998_pdata = {
 	.num_regulators	= ARRAY_SIZE(mid_regulators),
 	.regulators	= mid_regulators,
 	.charger	= NULL,
-};
-
-static struct s3c_ide_platdata smdkv210_ide_pdata __initdata = {
-	.setup_gpio	= s5pv210_ide_setup_gpio,
-};
-
-static uint32_t smdkv210_keymap[] __initdata = {
-	/* KEY(row, col, keycode) */
-	KEY(0, 3, KEY_1), KEY(0, 4, KEY_2), KEY(0, 5, KEY_3),
-	KEY(0, 6, KEY_4), KEY(0, 7, KEY_5),
-	KEY(1, 3, KEY_A), KEY(1, 4, KEY_B), KEY(1, 5, KEY_C),
-	KEY(1, 6, KEY_D), KEY(1, 7, KEY_E), KEY(7, 1, KEY_LEFTBRACE)
-};
-
-static struct matrix_keymap_data smdkv210_keymap_data __initdata = {
-	.keymap		= smdkv210_keymap,
-	.keymap_size	= ARRAY_SIZE(smdkv210_keymap),
-};
-
-static struct samsung_keypad_platdata smdkv210_keypad_data __initdata = {
-	.keymap_data	= &smdkv210_keymap_data,
-	.rows		= 8,
-	.cols		= 8,
 };
 
 static struct resource mid_dm9000_resources[] = {
@@ -1303,7 +1276,6 @@ static struct platform_device *mid_devices[] __initdata = {
 	&s5pv210_device_iis1,
 
 	&samsung_asoc_dma,
-	&deviceKeypad,
 	&mid_dm9000,
 
 	&s3c_device_timer[0],
@@ -1353,11 +1325,6 @@ static struct platform_device *mid_devices[] __initdata = {
 #endif
 #ifdef CONFIG_VIDEO_MFC50
 	&s3c_device_mfc,
-#endif
-#ifdef CONFIG_ANDROID_PMEM
-	&pmem_device,
-	&pmem_gpu1_device,
-	&pmem_adsp_device,
 #endif
 #ifdef CONFIG_S5PV210_POWER_DOMAIN
 	&s5pv210_pd_tv,
@@ -1425,7 +1392,6 @@ static void __init mid_machine_init(void) {
 
 	s3c_adc_set_platdata(&s3c_adc_platform);
 	s3c_nand_set_platdata(&mid_nand_info);
-	samsung_keypad_set_platdata(&smdkv210_keypad_data);
 	s3c_ts_set_platdata(&s3c_ts_platform);
 
 	s3c_i2c0_set_platdata(NULL);
@@ -1438,7 +1404,6 @@ static void __init mid_machine_init(void) {
 	i2c_register_board_info(2, mid_i2c_devs2,
 			ARRAY_SIZE(mid_i2c_devs2));
 
-	s3c_ide_set_platdata(&smdkv210_ide_pdata);
 	s3c_fb_set_platdata(&mid_fb_data);
 
 	s3c_ehci_set_platdata(&mid_ehci_pdata);
