@@ -41,7 +41,7 @@ REV ?= 2
 
 # ATHENV
 ifeq ($(ATH_ANDROID_ENV),yes)
-EXTRA_CFLAGS += -D__linux__ -Wno-error
+EXTRA_CFLAGS += -D__linux__ -Wno-error -DANDROID_ECLAIR_ENV=1
 endif
 # ATHENV
 

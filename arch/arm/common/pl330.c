@@ -1,4 +1,4 @@
-/* linux/arch/arm/common/pl330.c
+﻿/* linux/arch/arm/common/pl330.c
  *
  * Copyright (C) 2010 Samsung Electronics Co Ltd.
  *	Jaswinder Singh <jassi.brar@samsung.com>

@@ -288,32 +288,16 @@ typedef enum {
     WEP_CRYPT           = 0x02,
     TKIP_CRYPT          = 0x03,
     AES_CRYPT           = 0x04,
-#ifdef WAPI_ENABLE
-    WAPI_CRYPT          = 0x05,
-#endif /* WAPI_ENABLE */
 } CRYPTO_TYPE;
 
-#ifdef WAPI_ENABLE
-#define IW_ENCODE_ALG_SM4              0x20
-#define IW_AUTH_WAPI_ENABLED           0x20
-#endif /* WAPI_ENABLE */
 
 #define WMI_MIN_CRYPTO_TYPE NONE_CRYPT
 #define WMI_MAX_CRYPTO_TYPE (AES_CRYPT + 1)
-
-#ifdef WAPI_ENABLE
-#undef WMI_MAX_CRYPTO_TYPE
-#define WMI_MAX_CRYPTO_TYPE (WAPI_CRYPT + 1)
-#endif /* WAPI_ENABLE */
 
 
 #define WMI_MIN_KEY_INDEX   0
 #define WMI_MAX_KEY_INDEX   3
 
-#ifdef WAPI_ENABLE
-#undef WMI_MAX_KEY_INDEX
-#define WMI_MAX_KEY_INDEX   7 /* wapi grpKey 0-3, prwKey 4-7 */
-#endif /* WAPI_ENABLE */
 
 #define WMI_MAX_KEY_LEN     32
 
@@ -369,9 +353,6 @@ typedef enum {
  */
 #define KEY_OP_INIT_TSC       0x01
 #define KEY_OP_INIT_RSC       0x02
-#ifdef WAPI_ENABLE
-#define KEY_OP_INIT_WAPIPN    0x10
-#endif /* WAPI_ENABLE */
 
 #define KEY_OP_INIT_VAL     0x03     /* Default Initialise the TSC & RSC */
 #define KEY_OP_VALID_MASK   0x03

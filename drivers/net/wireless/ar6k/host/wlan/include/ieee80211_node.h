@@ -82,20 +82,13 @@ struct ieee80211_node_table {
     struct bss              *nt_hash[IEEE80211_NODE_HASHSIZE];
     const char              *nt_name;   /* for debugging */
     A_UINT32                nt_scangen; /* gen# for timeout scan */
-    A_TIMER                 nt_inact_timer;
-    A_UINT8                 isTimerArmed;   /* is the node timer armed */
     A_UINT32                nt_nodeAge; /* node aging time */
 #ifdef OS_ROAM_MANAGEMENT
     A_UINT32                nt_si_gen; /* gen# for scan indication*/
 #endif
 };
 
-/* ATHENV */
-#ifdef ANDROID_ENV
-#define WLAN_NODE_INACT_TIMEOUT_MSEC            30000
-#else
 #define WLAN_NODE_INACT_TIMEOUT_MSEC            120000
-#endif
-/* ATHENV */
+#define WLAN_NODE_INACT_CNT            4
 
 #endif /* _IEEE80211_NODE_H_ */

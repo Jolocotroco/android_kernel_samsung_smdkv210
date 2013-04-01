@@ -78,9 +78,17 @@ export  ATH_HTC_RAW_INT_ENV
 export  ATH_ANDROID_ENV
 
 ATH_SRC_BASE :=$(shell pwd)
-
+MAKE :=make
+CC :=$(ATH_CROSS_COMPILE_TYPE)gcc
+LD :=$(ATH_CROSS_COMPILE_TYPE)ld
+STRIP :=$(ATH_CROSS_COMPILE_TYPE)strip
 ATH_HIF_TYPE :=`echo $(ATH_BUS_TYPE) | tr [:upper:] [:lower:]`
 
+export  STRIP
+
+#export compiler variables for 3rd party applications (like the WPA supplicant)
+export  CC
+export  LD
 export  STRIP
 
 # Set cross compile type (if any)

@@ -38,15 +38,16 @@
 #include <net/iw_handler.h>
 #include <linux/if_arp.h>
 #include <linux/ip.h>
-#include <linux/sched.h>
-#include <linux/interrupt.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
 #include <asm/semaphore.h>
 #else
 #include <linux/semaphore.h>
+#include <linux/sched.h>
 #endif
 #include <linux/wireless.h>
 #include <linux/module.h>
+#include <linux/hardirq.h>
+#include <linux/interrupt.h>
 #include <asm/io.h>
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
@@ -251,6 +252,7 @@ typedef struct ar6_softc {
     A_BOOL                  arWmiEnabled;
     A_BOOL                  arWmiReady;
     A_BOOL                  arConnected;
+	A_BOOL					arConnectedSuspend;			/* Saved connection status in suspend mode. */
     HTC_HANDLE              arHtcTarget;
     void                    *arHifDevice;
     spinlock_t              arLock;
@@ -381,7 +383,7 @@ typedef struct ar6_softc {
 #define ATH_DHCP_ACK                  5
 
 #define ATH_DHCP_INVALID_MSG          99
-#define A_DHCP_TIMER_INTERVAL       10 * 1000
+#define A_DHCP_TIMER_INTERVAL       5 * 1000
 
 typedef PREPACK struct ether2_hdr {
     A_UINT8     destMAC[ATH_MAC_LEN];

@@ -48,7 +48,7 @@ static void hifDeviceRemoved(struct sdio_func *func);
 static HIF_DEVICE *addHifDevice(struct sdio_func *func);
 static HIF_DEVICE *getHifDevice(struct sdio_func *func);
 static void delHifDevice(HIF_DEVICE * device);
-
+A_STATUS ReinitSDIO(HIF_DEVICE *device);
 
 /* ------ Static Variables ------ */
 static const struct sdio_device_id ar6k_id_table[] = {
@@ -749,31 +749,28 @@ static void hifDeviceRemoved(struct sdio_func *func)
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27) && defined(CONFIG_PM)
-
 static int hifDeviceSuspend(struct device *dev)
 {
-    HIF_DEVICE *device;
-    A_STATUS status = A_OK;
+    int ret;
     struct sdio_func *func = dev_to_sdio_func(dev);
-    device = getHifDevice(func);
-    status = HIFDoDeviceSuspend(device);
-    return A_SUCCESS(status) ? 0 : status;
-}
-
-static int hifDeviceResume(struct device *dev)
-{
-    HIF_DEVICE *device;
     A_STATUS status = A_OK;
-    struct sdio_func *func = dev_to_sdio_func(dev);
+    HIF_DEVICE *device;   
+	mmc_pm_flag_t sdio_flags;
+	
+	sdio_flags = sdio_get_host_pm_caps(func);
+	if (!(sdio_flags & MMC_PM_KEEP_POWER)) {
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERROR, ("%s: can't keep power while host is suspended\n", __FUNCTION__));
+		return  -EINVAL;
+	}
+
+	/* keep power while host suspended */
+	ret = sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
+	if (ret) {
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERROR, ("%s: error while trying to keep power\n", __FUNCTION__));
+		return ret;
+	}
+	
     device = getHifDevice(func);
-    status = HIFDoDeviceResume(device);
-    return A_SUCCESS(status) ? 0 : status;
-}
-
-int HIFDoDeviceSuspend(HIF_DEVICE *device)
-{
-    A_STATUS status = A_OK;
-
     if (device && device->claimedContext && osdrvCallbacks.deviceSuspendHandler) {
         status = osdrvCallbacks.deviceSuspendHandler(device->claimedContext);
     }
@@ -786,6 +783,27 @@ int HIFDoDeviceSuspend(HIF_DEVICE *device)
             wait_for_completion(&device->async_completion);
             device->async_task = NULL;
         }
+		
+#if 0		
+        /* Disable the card */
+        sdio_claim_host(device->func);
+        status = sdio_disable_func(device->func);
+
+        /* reset the SDIO interface.  This is useful in automated testing where the card
+         * does not need to be removed at the end of the test.  It is expected that the user will 
+         * also unload/reload the host controller driver to force the bus driver to re-enumerate the slot */
+        AR_DEBUG_PRINTF(ATH_DEBUG_TRACE, ("AR6000: reseting SDIO card back to uninitialized state \n"));
+        
+        /* NOTE : sdio_f0_writeb() cannot be used here, that API only allows access
+         *        to undefined registers in the range of: 0xF0-0xFF */
+        ret = Func0_CMD52WriteByte(device->func->card, SDIO_CCCR_ABORT, (1 << 3)); 
+        if (ret!=0) {
+             AR_DEBUG_PRINTF(ATH_DEBUG_ERROR, ("AR6000: reset failed : %d \n",ret));    
+        }
+		
+        sdio_release_host(device->func);
+#endif
+
         device->is_suspend = TRUE;
     } else if (status == A_EBUSY) {
         return -EBUSY; /* Return -1 if customer use all android patch of mmc stack provided by us */ 
@@ -793,19 +811,110 @@ int HIFDoDeviceSuspend(HIF_DEVICE *device)
     return A_SUCCESS(status) ? 0 : status;
 }
 
-int HIFDoDeviceResume(HIF_DEVICE *device)
+#define SDIO_SET_CMD52_ARG(arg,rw,func,raw,address,writedata) \
+    (arg) = (((rw) & 1) << 31)           | \
+            (((func) & 0x7) << 28)       | \
+            (((raw) & 1) << 27)          | \
+            (1 << 26)                    | \
+            (((address) & 0x1FFFF) << 9) | \
+            (1 << 8)                     | \
+            ((writedata) & 0xFF)
+
+#define SDIO_SET_CMD52_READ_ARG(arg,func,address) \
+    SDIO_SET_CMD52_ARG(arg,0,(func),0,address,0x00)
+#define SDIO_SET_CMD52_WRITE_ARG(arg,func,address,value) \
+    SDIO_SET_CMD52_ARG(arg,1,(func),0,address,value)
+
+
+A_STATUS ReinitSDIO(HIF_DEVICE *device)
+{
+    A_INT32 err = 0;
+    struct mmc_host *host;
+    struct mmc_card *card;
+    struct sdio_func *func;
+    A_UINT32 clock;
+    A_BOOL linux_ge_2_6_32 = (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32));
+
+    func = device->func;
+    card = func->card;
+    host = card->host;
+
+
+    sdio_claim_host(func);
+
+    do {
+        if (linux_ge_2_6_32) {
+            /* Set clock */
+            if (mmc_card_highspeed(card)) {
+                clock = 25000000;
+            } else {
+                clock = card->cis.max_dtr;
+            }
+
+            if (clock > host->f_max) {
+                clock = host->f_max;
+            }
+            host->ios.clock = clock;
+            host->ops->set_ios(host, &host->ios);
+
+            if (card->host->caps & MMC_CAP_4_BIT_DATA) {
+                /* CMD52: Set bus width & disable card detect resistor */
+                err = Func0_CMD52WriteByte(card, SDIO_CCCR_IF, SDIO_BUS_CD_DISABLE | SDIO_BUS_WIDTH_4BIT);
+                if (err) {
+                    AR_DEBUG_PRINTF(ATH_DEBUG_ERROR, ("ReinitSDIO: CMD52 to set bus mode failed : %d \n",err));
+                    break;
+                }
+                host->ios.bus_width = MMC_BUS_WIDTH_4;
+                host->ops->set_ios(host, &host->ios);
+            }
+        }
+    } while (0);
+
+    sdio_release_host(func);
+    AR_DEBUG_PRINTF(ATH_DEBUG_TRACE, ("AR6000: -ReinitSDIO \n"));
+
+    return (err) ? A_ERROR : A_OK;
+}
+
+static int hifDeviceResume(struct device *dev)
 {
     struct task_struct* pTask;
     const char *taskName;
     int (*taskFunc)(void *);
+	struct sdio_func *func = dev_to_sdio_func(dev);
     A_STATUS ret = A_OK;
+    HIF_DEVICE *device;   
+    device = getHifDevice(func);
 
     if (device->is_suspend) {
+	
+#if 0
+        ret = ReinitSDIO(device);
+        if (ret != A_OK)
+            return A_ERROR;
+			
+        /* enable the SDIO function */
+        sdio_claim_host(func);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
+        /* give us some time to enable, in ms */
+        func->enable_timeout = 100;
+#endif
+        ret = sdio_enable_func(func);
+        if (ret) {
+            AR_DEBUG_PRINTF(ATH_DEBUG_ERROR, ("AR6000: %s(), Unable to enable AR6K: 0x%X\n",
+					  __FUNCTION__, ret));
+            sdio_release_host(func);
+            return ret;
+    }
+        ret = sdio_set_block_size(func, HIF_MBOX_BLOCK_SIZE);
+        sdio_release_host(func);
         if (ret) {
             AR_DEBUG_PRINTF(ATH_DEBUG_ERROR, ("AR6000: %s(), Unable to set block size 0x%x  AR6K: 0x%X\n",
 					  __FUNCTION__, HIF_MBOX_BLOCK_SIZE, ret));
             return ret;
         }
+#endif		
+
         device->is_suspend = FALSE;
         /* create async I/O thread */
         if (!device->async_task) {

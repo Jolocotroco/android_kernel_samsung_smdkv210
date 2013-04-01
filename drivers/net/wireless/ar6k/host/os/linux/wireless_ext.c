@@ -2150,6 +2150,7 @@ ar6000_ioctl_siwpriv(struct net_device *dev,
               struct iw_request_info *info,
               struct iw_param *data, char *extra)
 {
+#ifdef ANDROID_ECLAIR_ENV
     int ret = 0;
     AR_SOFTC_T *ar = (AR_SOFTC_T *)netdev_priv(dev);
     static WMI_SCAN_PARAMS_CMD scParams = {0, 0, 0, 0, 0,
@@ -2262,8 +2263,11 @@ ar6000_ioctl_siwpriv(struct net_device *dev,
         }
     }
 	
-  /* return 0 instead of -EOPNOTSUPP  to keep android's wpa_supplicant happy. TODO: implement all custom commands required by android */
-    return 0;//-EOPNOTSUPP;
+    /* return 0 instead of -EOPNOTSUPP  to keep android's wpa_supplicant happy. TODO: implement all custom commands required by android */
+    return 0;
+#else
+    return -EOPNOTSUPP; /*for now*/
+#endif
 }
 
 /*
@@ -2501,7 +2505,7 @@ ar6000_ioctl_siwscan(struct net_device *dev,
 #endif
 
     if (wmi_startscan_cmd(ar->arWmi, WMI_LONG_SCAN, FALSE, FALSE, \
-                          0, 100, 0, NULL) != A_OK) {
+                          0, 200, 0, NULL) != A_OK) {
         ret = -EIO;
     }
 
