@@ -982,7 +982,7 @@ struct mtd_partition mid_nand_partitions[] __initdata = {
 		.size		= (8*SZ_1M),
 	},
 	{
-		.name		= "kernel",
+		.name		= "boot",
 		.offset		= (9*SZ_1M),
 		.size		= (6*SZ_1M),
 	},
@@ -991,22 +991,11 @@ struct mtd_partition mid_nand_partitions[] __initdata = {
 		.offset		= (15*SZ_1M),
 		.size		= (4*SZ_1M),
 	},
-	{
+/*	{
 		.name		= "rootfs",
 		.offset		= (21*SZ_1M),
 		.size		= MTDPART_SIZ_FULL,
-	},
-	{
-		.name		= "param",
-		.offset		= (19*SZ_1M),
-		.size		= (2*SZ_1M),
-	},
-	{
-		.name		= "bootloader",
-		.offset		= 0,
-		.size		= (512*SZ_1K),
-		.mask_flags	= MTD_CAP_NANDFLASH,
-	}
+	},*/
 };
 
 struct s3c2410_nand_set mid_nand_sets[]  __initdata = {
